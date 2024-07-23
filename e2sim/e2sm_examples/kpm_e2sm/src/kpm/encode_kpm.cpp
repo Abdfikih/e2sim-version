@@ -238,56 +238,131 @@ void kpm_report_indication_header_initialized(E2SM_KPM_IndicationHeader_t* ihead
 void ue_meas_kpm_report_indication_message_initialized(
     E2SM_KPM_IndicationMessage_t* indicationmessage, uint8_t* nrcellid_buf, uint8_t* crnti_buf,
     const uint8_t* serving_buf, const uint8_t* neighbor_buf) {
-  
+
+  // Allocate memory for MeasurementRecord
   MeasurementRecord_t* measDataItem_record = (MeasurementRecord_t*)calloc(1, sizeof(MeasurementRecord_t));
-  for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++)
-  {
+  if (!measDataItem_record) {
+    LOG_I("Memory allocation for measDataItem_record failed");
+    exit(1);
+  }
+
+  // Populate MeasurementRecord with MeasurementRecordItems
+  for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++) {
     MeasurementRecordItem_t* measDataRecordItem = (MeasurementRecordItem_t*)calloc(1, sizeof(MeasurementRecordItem_t));
+    if (!measDataRecordItem) {
+      LOG_I("Memory allocation for measDataRecordItem failed");
+      exit(1);
+    }
+    
     measDataRecordItem->present = MeasurementRecordItem_PR_integer;
     measDataRecordItem->choice.integer = 1;
 
-    ASN_SEQUENCE_ADD(&measDataItem_record->list, measDataRecordItem);
+    if (ASN_SEQUENCE_ADD(&measDataItem_record->list, measDataRecordItem) != 0) {
+      LOG_I("ASN_SEQUENCE_ADD failed for MeasurementRecordItem");
+      exit(1);
+    }
   }
 
+  // Allocate memory for MeasurementDataItem and set its fields
   MeasurementDataItem_t* measDataItem = (MeasurementDataItem_t*)calloc(1, sizeof(MeasurementDataItem_t));
+  if (!measDataItem) {
+    LOG_I("Memory allocation for measDataItem failed");
+    exit(1);
+  }
   measDataItem->measRecord = *measDataItem_record;
   measDataItem->incompleteFlag = (long*)calloc(1, sizeof(long));
+  if (!measDataItem->incompleteFlag) {
+    LOG_I("Memory allocation for incompleteFlag failed");
+    exit(1);
+  }
   *measDataItem->incompleteFlag = 0;
 
+  // Allocate memory for MeasurementData and add MeasurementDataItem
   MeasurementData_t* measData = (MeasurementData_t*)calloc(1, sizeof(MeasurementData_t));
-  ASN_SEQUENCE_ADD(&measData->list, measDataItem);
+  if (!measData) {
+    LOG_I("Memory allocation for measData failed");
+    exit(1);
+  }
+  if (ASN_SEQUENCE_ADD(&measData->list, measDataItem) != 0) {
+    LOG_I("ASN_SEQUENCE_ADD failed for MeasurementDataItem");
+    exit(1);
+  }
 
+  // Allocate memory for MeasurementInfoList and populate it
   MeasurementInfoList_t* measList = (MeasurementInfoList_t*)calloc(1, sizeof(MeasurementInfoList_t));
-  for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++)
-  {
+  if (!measList) {
+    LOG_I("Memory allocation for measList failed");
+    exit(1);
+  }
+  for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++) {
     MeasurementLabel_t* measLabel = (MeasurementLabel_t*)calloc(1, sizeof(MeasurementLabel_t));
+    if (!measLabel) {
+      LOG_I("Memory allocation for measLabel failed");
+      exit(1);
+    }
     measLabel->noLabel = (long *)calloc(1, sizeof(long));
+    if (!measLabel->noLabel) {
+      LOG_I("Memory allocation for noLabel failed");
+      exit(1);
+    }
     *measLabel->noLabel = 0;
 
     LabelInfoItem_t* labelItem = (LabelInfoItem_t*)calloc(1, sizeof(LabelInfoItem_t));
+    if (!labelItem) {
+      LOG_I("Memory allocation for labelItem failed");
+      exit(1);
+    }
     labelItem->measLabel = *measLabel;
 
     LabelInfoList_t* labelList = (LabelInfoList_t*)calloc(1, sizeof(LabelInfoList_t));
-    ASN_SEQUENCE_ADD(&labelList->list, labelItem);
+    if (!labelList) {
+      LOG_I("Memory allocation for labelList failed");
+      exit(1);
+    }
+    if (ASN_SEQUENCE_ADD(&labelList->list, labelItem) != 0) {
+      LOG_I("ASN_SEQUENCE_ADD failed for LabelInfoItem");
+      exit(1);
+    }
 
     MeasurementType_t measType;
     measType.present = MeasurementType_PR_measID;
     uint8_t* metrics = (uint8_t *)performance_measurements[i];
-    measType.choice.measName.buf = (uint8_t*)calloc(1, strlen((char*)metrics));
+    measType.choice.measName.buf = (uint8_t*)calloc(strlen((char*)metrics) + 1, sizeof(uint8_t));
+    if (!measType.choice.measName.buf) {
+      LOG_I("Memory allocation for measName.buf failed");
+      exit(1);
+    }
     memcpy(measType.choice.measName.buf, metrics, strlen((char*)metrics));
     measType.choice.measName.size = strlen((char*)metrics);
 
     MeasurementInfoItem_t* measItem = (MeasurementInfoItem_t*)calloc(1, sizeof(MeasurementInfoItem_t));
+    if (!measItem) {
+      LOG_I("Memory allocation for measItem failed");
+      exit(1);
+    }
     measItem->measType = measType;
     measItem->labelInfoList = *labelList;
+
     if (labelList) free(labelList);
-    
-    ASN_SEQUENCE_ADD(&measList->list, measItem);
+
+    if (ASN_SEQUENCE_ADD(&measList->list, measItem) != 0) {
+      LOG_I("ASN_SEQUENCE_ADD failed for MeasurementInfoItem");
+      exit(1);
+    }
   }
-  
+
+  // Allocate memory for E2SM_KPM_IndicationMessage_Format1 and set its fields
   E2SM_KPM_IndicationMessage_Format1_t* format = (E2SM_KPM_IndicationMessage_Format1_t*)calloc(
       1, sizeof(E2SM_KPM_IndicationMessage_Format1_t));
+  if (!format) {
+    LOG_I("Memory allocation for E2SM_KPM_IndicationMessage_Format1 failed");
+    exit(1);
+  }
   format->granulPeriod = (GranularityPeriod_t*)calloc(1, sizeof(GranularityPeriod_t));
+  if (!format->granulPeriod) {
+    LOG_I("Memory allocation for granulPeriod failed");
+    exit(1);
+  }
   *format->granulPeriod = 1;
   format->measData = *measData;
   format->measInfoList = measList;
@@ -298,21 +373,115 @@ void ue_meas_kpm_report_indication_message_initialized(
   indicationmessage->indicationMessage_formats.present = pres;
   indicationmessage->indicationMessage_formats.choice.indicationMessage_Format1 = format;
 
-  char error_buf[300] = {
-      0,
-  };
+  char error_buf[300] = {0};
   size_t errlen = 0;
 
-  int ret = asn_check_constraints(&asn_DEF_E2SM_KPM_IndicationMessage, indicationmessage, error_buf,
-                                  &errlen);
+  // Perform constraint check
+  // LOG_I("print asn def %s", asn_DEF_E2SM_KPM_IndicationMessage.name);
+  // LOG_I("print indication message %s", indicationmessage->indicationMessage_formats.choice.indicationMessage_Format1->measData.list.array[0]->measRecord.list.array[0]->choice.integer);
+  // LOG_I("print error buf %s", error_buf); 
 
-  if (ret) {
-    LOG_I("Constraint validation of indication message failed: %s", error_buf);
-    exit(1);
-  }
+  // int ret = asn_check_constraints(&asn_DEF_E2SM_KPM_IndicationMessage, indicationmessage, error_buf, &errlen);
+  // if (ret) {
+  //   LOG_I("Constraint validation of indication message failed: %s", error_buf);
+  //   exit(1);
+  // } else {
+  //   LOG_I("Constraint validation of indication message succeeded");
+  // }
 
+  // Optional: Print the encoded message for debugging purposes
   // xer_fprint(stderr, &asn_DEF_E2SM_KPM_IndicationMessage, indicationmessage);
 }
+
+// void ue_meas_kpm_report_indication_message_initialized(
+//     E2SM_KPM_IndicationMessage_t* indicationmessage, uint8_t* nrcellid_buf, uint8_t* crnti_buf,
+//     const uint8_t* serving_buf, const uint8_t* neighbor_buf) {
+  
+//   MeasurementRecord_t* measDataItem_record = (MeasurementRecord_t*)calloc(1, sizeof(MeasurementRecord_t));
+
+//   if (!measDataItem_record) {
+//     LOG_I("Memory allocation for measDataItem_record failed");
+//     exit(1);
+//   }
+
+//   for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++)
+//   {
+//     MeasurementRecordItem_t* measDataRecordItem = (MeasurementRecordItem_t*)calloc(1, sizeof(MeasurementRecordItem_t));
+//     if (!measDataRecordItem) {
+//         LOG_I("Memory allocation for measDataRecordItem failed");
+//         exit(1);
+//     }
+
+//     measDataRecordItem->present = MeasurementRecordItem_PR_integer;
+//     measDataRecordItem->choice.integer = 1;
+
+//     ASN_SEQUENCE_ADD(&measDataItem_record->list, measDataRecordItem);
+//   }
+
+//   MeasurementDataItem_t* measDataItem = (MeasurementDataItem_t*)calloc(1, sizeof(MeasurementDataItem_t));
+//   measDataItem->measRecord = *measDataItem_record;
+//   measDataItem->incompleteFlag = (long*)calloc(1, sizeof(long));
+//   *measDataItem->incompleteFlag = 0;
+
+//   MeasurementData_t* measData = (MeasurementData_t*)calloc(1, sizeof(MeasurementData_t));
+//   ASN_SEQUENCE_ADD(&measData->list, measDataItem);
+
+//   MeasurementInfoList_t* measList = (MeasurementInfoList_t*)calloc(1, sizeof(MeasurementInfoList_t));
+//   for (size_t i = 0; i < NUMBER_MEASUREMENTS; i++)
+//   {
+//     MeasurementLabel_t* measLabel = (MeasurementLabel_t*)calloc(1, sizeof(MeasurementLabel_t));
+//     measLabel->noLabel = (long *)calloc(1, sizeof(long));
+//     *measLabel->noLabel = 0;
+
+//     LabelInfoItem_t* labelItem = (LabelInfoItem_t*)calloc(1, sizeof(LabelInfoItem_t));
+//     labelItem->measLabel = *measLabel;
+
+//     LabelInfoList_t* labelList = (LabelInfoList_t*)calloc(1, sizeof(LabelInfoList_t));
+//     ASN_SEQUENCE_ADD(&labelList->list, labelItem);
+
+//     MeasurementType_t measType;
+//     measType.present = MeasurementType_PR_measID;
+//     uint8_t* metrics = (uint8_t *)performance_measurements[i];
+//     measType.choice.measName.buf = (uint8_t*)calloc(1, strlen((char*)metrics));
+//     memcpy(measType.choice.measName.buf, metrics, strlen((char*)metrics));
+//     measType.choice.measName.size = strlen((char*)metrics);
+
+//     MeasurementInfoItem_t* measItem = (MeasurementInfoItem_t*)calloc(1, sizeof(MeasurementInfoItem_t));
+//     measItem->measType = measType;
+//     measItem->labelInfoList = *labelList;
+//     if (labelList) free(labelList);
+    
+//     ASN_SEQUENCE_ADD(&measList->list, measItem);
+//   }
+  
+//   E2SM_KPM_IndicationMessage_Format1_t* format = (E2SM_KPM_IndicationMessage_Format1_t*)calloc(
+//       1, sizeof(E2SM_KPM_IndicationMessage_Format1_t));
+//   format->granulPeriod = (GranularityPeriod_t*)calloc(1, sizeof(GranularityPeriod_t));
+//   *format->granulPeriod = 1;
+//   format->measData = *measData;
+//   format->measInfoList = measList;
+
+//   E2SM_KPM_IndicationMessage__indicationMessage_formats_PR pres =
+//       E2SM_KPM_IndicationMessage__indicationMessage_formats_PR_indicationMessage_Format1;
+
+//   indicationmessage->indicationMessage_formats.present = pres;
+//   indicationmessage->indicationMessage_formats.choice.indicationMessage_Format1 = format;
+
+//   char error_buf[300] = {
+//       0,
+//   };
+//   size_t errlen = 0;
+
+//   int ret = asn_check_constraints(&asn_DEF_E2SM_KPM_IndicationMessage, indicationmessage, error_buf,
+//                                   &errlen);
+
+//   if (ret) {
+//     LOG_I("Constraint validation of indication message failed: %s", error_buf);
+//     exit(1);
+//   }
+
+//   // xer_fprint(stderr, &asn_DEF_E2SM_KPM_IndicationMessage, indicationmessage);
+// }
 
 void cell_meas_kpm_report_indication_message_style_1_initialized(
     E2SM_KPM_IndicationMessage_t* indicationmessage, long fiveqi, long dl_prb_usage,

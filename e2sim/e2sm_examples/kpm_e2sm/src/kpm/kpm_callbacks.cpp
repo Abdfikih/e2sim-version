@@ -319,12 +319,17 @@ void run_report_loop(long requestorId, long instanceId, long ranFunctionId, long
 
 			uint8_t *cuupname_buf = (uint8_t*)"GNBCUUP5";	  
 			
+			LOG_I("Encoding UE indication message step 1");
 			
 			E2SM_KPM_IndicationMessage_t *ind_msg_cucp_ue =
 				(E2SM_KPM_IndicationMessage_t*)calloc(1,sizeof(E2SM_KPM_IndicationMessage_t));
 			
+			LOG_I("Print Indication Message KPM UE %d", &ind_msg_cucp_ue);
+			
 			ue_meas_kpm_report_indication_message_initialized(ind_msg_cucp_ue, nrcellid_buf, crnti_buf, serving_buf, neighbor_buf);
 			
+			LOG_I("Encoding UE indication message step 2");
+
 			uint8_t e2sm_message_buf_cucp_ue[8192] = {0, };
 			size_t e2sm_message_buf_size_cucp_ue = 8192;
 			
@@ -335,6 +340,8 @@ void run_report_loop(long requestorId, long instanceId, long ranFunctionId, long
 										&asn_DEF_E2SM_KPM_IndicationMessage,
 										ind_msg_cucp_ue, e2sm_message_buf_cucp_ue, e2sm_message_buf_size_cucp_ue);
 			
+			LOG_I("Encoding UE indication message step 3");
+
 			if(er_message_cucp_ue.encoded == -1) {
 				LOG_I("Failed to serialize message data. Detail: %s.\n", asn_DEF_E2SM_KPM_IndicationMessage.name);
 				exit(1);
