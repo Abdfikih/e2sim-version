@@ -82,7 +82,7 @@ RUN cp nlohmann_json_release/json.hpp /usr/local/include/nlohmann
 
 COPY ./e2sm_examples/kpm_e2sm/ /playpen/src/
 COPY asn1c/ /playpen/src/asn1c/
-RUN wc -l /playpen/src/reports.json
+RUN wc -l /playpen/src/reports_file_full.json
  RUN cd /playpen/src && \
  		rm -fr .build &&\
 		mkdir  .build && \
@@ -92,5 +92,5 @@ RUN wc -l /playpen/src/reports.json
 
 #CMD sleep 100000000000
 #CMD kpm_sim 10.111.138.172 32222
-CMD kpm_sim 10.109.135.184 36422
+CMD kpm_sim 10.98.11.191 36422
 

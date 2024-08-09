@@ -191,6 +191,27 @@ void e2ap_handle_sctp_data(int& socket_fd, sctp_buffer_t& data, bool xmlenc, E2S
       }
       break;
 
+    case ProcedureCode_id_RICcontrol:
+      LOG_I("Received a message of RIC control procedure");
+      switch (index) {
+        case E2AP_PDU_PR_initiatingMessage:
+          LOG_I("Received RIC-CONTROL-REQUEST")
+          break;
+
+        case E2AP_PDU_PR_successfulOutcome:
+          LOG_I("Received RIC-CONTROL-SUCCESS")
+          break;
+
+        case E2AP_PDU_PR_unsuccessfulOutcome:
+          LOG_I("Received RIC-CONTROL-FAILURE")
+          break;
+
+        default:
+          LOG_E("Invalid message index=%d in E2AP-PDU %d", index, (int)ProcedureCode_id_RICcontrol);
+          break;
+      }
+      break;
+
     default:
       LOG_E("No available handler for procedureCode=%d", procedureCode);
       break;

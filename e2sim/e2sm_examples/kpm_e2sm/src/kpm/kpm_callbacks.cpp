@@ -140,7 +140,7 @@ void run_report_loop(long requestorId, long instanceId, long ranFunctionId, long
   std::streambuf *input_filebuf = &reports_json;
 
   std::unique_ptr<viavi::RICTesterReceiver> viavi_connector;
-  if (!reports_json.open("/playpen/src/reports.json", std::ios::in)) {
+  if (!reports_json.open("/playpen/src/reports_file_full.json", std::ios::in)) {
     std::cerr << "Can't open reports.json, enabling VIAVI connector instead..." << endl;
 	viavi_connector.reset(new viavi::RICTesterReceiver {3001, nullptr});
 	input_filebuf = viavi_connector->get_data_filebuf();
